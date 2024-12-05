@@ -7,24 +7,39 @@ import {
   Param,
   Delete,
   Res,
-  Optional,
   Put,
+  Headers,
 } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 
-@Controller('urls')
+@Controller()
 export class UrlsController {
-  constructor(private readonly urlsService: UrlsService) {}
+  constructor(
+    private readonly urlsService: UrlsService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Post('shorten')
   async shortenUrl(
     @Body('url') url: string,
-    @Optional() @GetUser() user?: User,
+    @Headers('authorization') authHeader: string,
   ) {
+    let user: User | undefined;
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      const decoded = this.jwtService.decode(token) as {
+        sub: string;
+        email: string;
+      };
+
+      user = new User();
+      user.email = decoded?.email;
+    }
     return this.urlsService.shortenUrl(url, user);
   }
 
@@ -46,18 +61,18 @@ export class UrlsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(':id')
+  @Put(':shortUrl')
   async updateUrl(
-    @Param('id') id: number,
+    @Param('shortUrl') shortUrl: string,
     @Body('url') url: string,
     @GetUser() user: User,
   ) {
-    return this.urlsService.updateUrl(id, url, user);
+    return this.urlsService.updateUrl(shortUrl, url, user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  async deleteUrl(@Param('id') id: number, @GetUser() user: User) {
-    return this.urlsService.deleteUrl(id, user);
+  @Delete(':shortUrl')
+  async deleteUrl(@Param('shortUrl') shortUrl: string, @GetUser() user: User) {
+    return this.urlsService.deleteUrl(shortUrl, user);
   }
 }

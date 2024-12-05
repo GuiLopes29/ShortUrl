@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',

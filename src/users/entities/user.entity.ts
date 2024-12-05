@@ -1,11 +1,5 @@
-import { Url } from 'src/urls/entities/url.entity';
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
+import { Url } from '../../urls/entities/url.entity';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 
 @Entity()
 export class User {
@@ -15,7 +9,7 @@ export class User {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, unique: true })
   email: string;
 
   @Column({ length: 255 })
