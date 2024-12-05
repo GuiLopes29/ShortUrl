@@ -9,6 +9,8 @@ import {
   Res,
   Put,
   Headers,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
@@ -18,9 +20,9 @@ import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import {
   ApiBearerAuth,
+  ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiTags,
 } from '@nestjs/swagger';
 
 @ApiTags('URLs')
@@ -42,18 +44,25 @@ export class UrlsController {
     @Body('url') url: string,
     @Headers('authorization') authHeader: string,
   ) {
-    let user: User | undefined;
-    if (authHeader) {
-      const token = authHeader.split(' ')[1];
-      const decoded = this.jwtService.decode(token) as {
-        sub: string;
-        email: string;
-      };
-
-      user = new User();
-      user.email = decoded?.email;
+    try {
+      let user: User | undefined;
+      if (authHeader) {
+        const token = authHeader.split(' ')[1];
+        const decoded = this.jwtService.decode(token) as {
+          sub: number;
+          email: string;
+        };
+        user = new User();
+        user.id = decoded.sub;
+        user.email = decoded.email;
+      }
+      return await this.urlsService.shortenUrl(url, user);
+    } catch (error) {
+      throw new HttpException(
+        'Failed to shorten URL' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    return this.urlsService.shortenUrl(url, user);
   }
 
   @Get(':shortUrl')
@@ -61,12 +70,19 @@ export class UrlsController {
   @ApiResponse({ status: 302, description: 'Redirecting to the original URL.' })
   @ApiResponse({ status: 404, description: 'URL not found.' })
   async redirect(@Param('shortUrl') shortUrl: string, @Res() res: Response) {
-    const url = await this.urlsService.findByShortUrl(shortUrl);
-    if (url) {
-      await this.urlsService.incrementClicks(url.id);
-      return res.redirect(url.originalUrl);
-    } else {
-      return res.status(404).json({ message: 'URL not found' });
+    try {
+      const url = await this.urlsService.findByShortUrl(shortUrl);
+      if (url) {
+        await this.urlsService.incrementClicks(url.id);
+        return res.redirect(url.originalUrl);
+      } else {
+        return res.status(404).json({ message: 'URL not found' });
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Failed to redirect' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -76,7 +92,14 @@ export class UrlsController {
   @ApiOperation({ summary: 'Get all URLs for the user' })
   @ApiResponse({ status: 200, description: 'Return all URLs for the user.' })
   async findAllByUser(@GetUser() user: User) {
-    return this.urlsService.findAllByUser(user);
+    try {
+      return await this.urlsService.findAllByUser(user);
+    } catch (error) {
+      throw new HttpException(
+        'Failed to retrieve URLs' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @UseGuards(JwtAuthGuard)
@@ -93,7 +116,14 @@ export class UrlsController {
     @Body('url') url: string,
     @GetUser() user: User,
   ) {
-    return this.urlsService.updateUrl(shortUrl, url, user);
+    try {
+      return await this.urlsService.updateUrl(shortUrl, url, user);
+    } catch (error) {
+      throw new HttpException(
+        'Failed to update URL' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @UseGuards(JwtAuthGuard)
@@ -106,6 +136,13 @@ export class UrlsController {
   })
   @ApiResponse({ status: 404, description: 'URL not found.' })
   async deleteUrl(@Param('shortUrl') shortUrl: string, @GetUser() user: User) {
-    return this.urlsService.deleteUrl(shortUrl, user);
+    try {
+      return await this.urlsService.deleteUrl(shortUrl, user);
+    } catch (error) {
+      throw new HttpException(
+        'Failed to delete URL' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
