@@ -1,9 +1,5 @@
 export class CreateUserDto {
+  name: string;
   email: string;
   password: string;
-  name: string;
-  urls: string;
-  isActive: boolean;
-  created_at: Date;
-  updated_at: Date;
 }

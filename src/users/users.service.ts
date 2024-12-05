@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -28,7 +28,9 @@ export class UsersService {
   }
 
   findOneByCriteria(criteria: Partial<User>): Promise<User> {
-    return this.usersRepository.findOne({ where: criteria });
+    return this.usersRepository.findOne({
+      where: criteria as FindOptionsWhere<User>,
+    });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {

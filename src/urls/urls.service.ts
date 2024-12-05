@@ -43,4 +43,26 @@ export class UrlsService {
   async incrementClicks(id: number): Promise<void> {
     await this.urlsRepository.increment({ id }, 'clicks', 1);
   }
+
+  async findAllByUser(user: User): Promise<Url[]> {
+    return this.urlsRepository.find({ where: { user } });
+  }
+
+  async updateUrl(id: number, originalUrl: string, user: User): Promise<Url> {
+    const url = await this.urlsRepository.findOne({ where: { id, user } });
+    if (!url) {
+      throw new Error('URL not found or not owned by user');
+    }
+    url.originalUrl = originalUrl;
+    return this.urlsRepository.save(url);
+  }
+
+  async deleteUrl(id: number, user: User): Promise<void> {
+    const url = await this.urlsRepository.findOne({ where: { id, user } });
+    if (!url) {
+      throw new Error('URL not found or not owned by user');
+    }
+    url.deletedAt = new Date();
+    await this.urlsRepository.save(url);
+  }
 }
