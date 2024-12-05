@@ -50,10 +50,8 @@ export class Url {
 
   @BeforeUpdate()
   updateExpirationDate() {
-    if (!this.expiresAt) {
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 120);
-      this.expiresAt = expirationDate;
-    }
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 120);
+    this.expiresAt = expirationDate;
   }
 }

@@ -14,6 +14,10 @@ const mockUrlRepository = () => ({
   increment: jest.fn(),
 });
 
+const mockUserRepository = () => ({
+  findOne: jest.fn(),
+});
+
 const mockConfigService = () => ({
   get: jest.fn().mockReturnValue('http://localhost:3000'),
 });
@@ -21,27 +25,36 @@ const mockConfigService = () => ({
 describe('UrlsService', () => {
   let service: UrlsService;
   let urlRepository: Repository<Url>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let userRepository: Repository<User>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UrlsService,
         { provide: getRepositoryToken(Url), useFactory: mockUrlRepository },
+        { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: ConfigService, useFactory: mockConfigService },
       ],
     }).compile();
 
     service = module.get<UrlsService>(UrlsService);
     urlRepository = module.get<Repository<Url>>(getRepositoryToken(Url));
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 
   describe('shortenUrl', () => {
     it('should shorten a URL and return the shortened URL', async () => {
       const originalUrl = 'https://example.com';
-      const user = new User();
+      const user = undefined;
       const shortUrl = 'abc123';
       const createdUrl = { originalUrl, shortUrl, user } as Url;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       jest.spyOn(service as any, 'generateShortUrl').mockReturnValue(shortUrl);
       jest.spyOn(urlRepository, 'create').mockReturnValue(createdUrl);
       jest.spyOn(urlRepository, 'save').mockResolvedValue(createdUrl);
@@ -86,51 +99,88 @@ describe('UrlsService', () => {
   describe('findAllByUser', () => {
     it('should find all URLs by user', async () => {
       const user = new User();
-      const urls = [{ user }] as Url[];
+      user.email = 'user@example.com';
+      const urls = [
+        {
+          id: 1,
+          shortUrl: 'abc123',
+          originalUrl: 'https://example.com',
+          clicks: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          expiresAt: new Date(),
+          deletedAt: null,
+          user,
+        },
+      ] as Url[];
 
       jest.spyOn(urlRepository, 'find').mockResolvedValue(urls);
 
       const result = await service.findAllByUser(user);
-      expect(result).toBe(urls);
-      expect(urlRepository.find).toHaveBeenCalledWith({ where: { user } });
+      expect(result).toEqual(
+        urls.map((url) => ({
+          originalUrl: url.originalUrl,
+          shortUrl: `http://localhost:3000/${url.shortUrl}`,
+          clicks: url.clicks,
+          expiresAt: url.expiresAt,
+        })),
+      );
+      expect(urlRepository.find).toHaveBeenCalledWith({
+        where: {
+          user,
+          deletedAt: null,
+          expiresAt: expect.any(Object),
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      });
     });
   });
 
   describe('updateUrl', () => {
     it('should update the original URL of a shortened URL', async () => {
-      const id = 1;
+      const shortUrl = 'abc123';
       const originalUrl = 'https://newexample.com';
       const user = new User();
-      const url = { id, originalUrl: 'https://oldexample.com', user } as Url;
+      user.email = 'user@example.com';
+      const url = {
+        id: 1,
+        originalUrl: 'https://oldexample.com',
+        shortUrl,
+        user,
+      } as Url;
 
       jest.spyOn(urlRepository, 'findOne').mockResolvedValue(url);
       jest.spyOn(urlRepository, 'save').mockResolvedValue(url);
 
-      const result = await service.updateUrl(id, originalUrl, user);
+      const result = await service.updateUrl(shortUrl, originalUrl, user);
       expect(result).toBe(url);
       expect(urlRepository.findOne).toHaveBeenCalledWith({
-        where: { id, user },
+        where: { shortUrl, user },
       });
       expect(urlRepository.save).toHaveBeenCalledWith({ ...url, originalUrl });
     });
   });
 
   describe('deleteUrl', () => {
-    it('should mark a URL as deleted', async () => {
-      const id = 1;
+    it('should mark a URL as deleted and update the expiration date', async () => {
+      const shortUrl = 'abc123';
       const user = new User();
-      const url = { id, user, deletedAt: null } as Url;
+      user.email = 'user@example.com';
+      const url = { id: 1, shortUrl, user, deletedAt: null } as Url;
 
       jest.spyOn(urlRepository, 'findOne').mockResolvedValue(url);
       jest.spyOn(urlRepository, 'save').mockResolvedValue(url);
 
-      await service.deleteUrl(id, user);
+      await service.deleteUrl(shortUrl, user);
       expect(urlRepository.findOne).toHaveBeenCalledWith({
-        where: { id, user },
+        where: { shortUrl, user },
       });
       expect(urlRepository.save).toHaveBeenCalledWith({
         ...url,
         deletedAt: expect.any(Date),
+        expiresAt: expect.any(Date),
       });
     });
   });
