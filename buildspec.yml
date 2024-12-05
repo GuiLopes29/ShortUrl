@@ -25,6 +25,10 @@ phases:
       - echo "Running tests and type checks"
       - yarn build
       - yarn test
+  post_build:
+    commands:
+      - echo "Starting application in production mode"
+      - yarn start:prod
 artifacts:
   files:
     - "**/*"
