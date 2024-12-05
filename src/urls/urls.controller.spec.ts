@@ -15,7 +15,7 @@ const mockUrlsService = () => ({
 });
 
 const mockJwtService = () => ({
-  decode: jest.fn().mockReturnValue({ sub: 1, email: 'user@example.com' }),
+  decode: jest.fn().mockReturnValue({ email: 'user@example.com' }),
 });
 
 describe('UrlsController', () => {
@@ -51,7 +51,7 @@ describe('UrlsController', () => {
       jest.spyOn(service, 'shortenUrl').mockResolvedValue(shortUrl);
       jest
         .spyOn(jwtService, 'decode')
-        .mockReturnValue({ sub: 1, email: 'user@example.com' });
+        .mockReturnValue({ email: 'user@example.com' });
 
       const result = await controller.shortenUrl(originalUrl, `Bearer token`);
       expect(result).toBe(shortUrl);
@@ -111,6 +111,7 @@ describe('UrlsController', () => {
   describe('findAllByUser', () => {
     it('should return all URLs for the user', async () => {
       const user = new User();
+      user.email = 'user@example.com';
       const urls = [
         {
           id: 1,
@@ -121,7 +122,7 @@ describe('UrlsController', () => {
           updatedAt: new Date(),
           expiresAt: new Date(),
           deletedAt: null,
-          user: new User(),
+          user,
           setExpirationDate: jest.fn(),
           updateExpirationDate: jest.fn(),
         },
@@ -140,6 +141,7 @@ describe('UrlsController', () => {
       const shortUrl = 'abc123';
       const originalUrl = 'https://newexample.com';
       const user = new User();
+      user.email = 'user@example.com';
       const url = {
         id: 1,
         originalUrl,
@@ -149,7 +151,7 @@ describe('UrlsController', () => {
         updatedAt: new Date(),
         expiresAt: new Date(),
         deletedAt: null,
-        user: new User(),
+        user,
         setExpirationDate: jest.fn(),
         updateExpirationDate: jest.fn(),
       };
@@ -170,6 +172,7 @@ describe('UrlsController', () => {
     it('should delete a shortened URL', async () => {
       const shortUrl = 'abc123';
       const user = new User();
+      user.email = 'user@example.com';
 
       jest.spyOn(service, 'deleteUrl').mockResolvedValue(undefined);
 
