@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies"
+      - yarn install
+  pre_build:
+    commands:
+      - echo "Setting environment variables"
+      - export POSTGRES_USER=$POSTGRES_USER
+      - export POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - export POSTGRES_DB=$POSTGRES_DB
+      - export DATABASE_HOST=$DATABASE_HOST
+      - export DATABASE_PORT=$DATABASE_PORT
+      - export DATABASE_USER=$DATABASE_USER
+      - export DATABASE_PASSWORD=$DATABASE_PASSWORD
+      - export DATABASE_NAME=$DATABASE_NAME
+      - export JWT_SECRET=$JWT_SECRET
+      - export DOMAIN=$DOMAIN
+  build:
+    commands:
+      - echo "Running tests and type checks"
+      - yarn build
+      - yarn test
+artifacts:
+  files:
+    - "**/*"
+  base-directory: "dist"
