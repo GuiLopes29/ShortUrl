@@ -16,7 +16,14 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('URLs')
 @Controller()
 export class UrlsController {
   constructor(
@@ -25,6 +32,12 @@ export class UrlsController {
   ) {}
 
   @Post('shorten')
+  @ApiOperation({ summary: 'Shorten a URL' })
+  @ApiResponse({
+    status: 201,
+    description: 'The URL has been successfully shortened.',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   async shortenUrl(
     @Body('url') url: string,
     @Headers('authorization') authHeader: string,
@@ -44,6 +57,9 @@ export class UrlsController {
   }
 
   @Get(':shortUrl')
+  @ApiOperation({ summary: 'Redirect to the original URL' })
+  @ApiResponse({ status: 302, description: 'Redirecting to the original URL.' })
+  @ApiResponse({ status: 404, description: 'URL not found.' })
   async redirect(@Param('shortUrl') shortUrl: string, @Res() res: Response) {
     const url = await this.urlsService.findByShortUrl(shortUrl);
     if (url) {
@@ -56,12 +72,22 @@ export class UrlsController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all URLs for the user' })
+  @ApiResponse({ status: 200, description: 'Return all URLs for the user.' })
   async findAllByUser(@GetUser() user: User) {
     return this.urlsService.findAllByUser(user);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put(':shortUrl')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update the original URL of a shortened URL' })
+  @ApiResponse({
+    status: 200,
+    description: 'The URL has been successfully updated.',
+  })
+  @ApiResponse({ status: 404, description: 'URL not found.' })
   async updateUrl(
     @Param('shortUrl') shortUrl: string,
     @Body('url') url: string,
@@ -72,6 +98,13 @@ export class UrlsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':shortUrl')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a shortened URL' })
+  @ApiResponse({
+    status: 200,
+    description: 'The URL has been successfully deleted.',
+  })
+  @ApiResponse({ status: 404, description: 'URL not found.' })
   async deleteUrl(@Param('shortUrl') shortUrl: string, @GetUser() user: User) {
     return this.urlsService.deleteUrl(shortUrl, user);
   }
