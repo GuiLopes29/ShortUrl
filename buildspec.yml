@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies"
+      - yarn install
+  pre_build:
+    commands:
+      - echo "Setting environment variables"
+      - export DATABASE_HOST=$DATABASE_HOST
+      - export DATABASE_PORT=$DATABASE_PORT
+      - export DATABASE_USER=$DATABASE_USER
+      - export DATABASE_PASSWORD=$DATABASE_PASSWORD
+      - export DATABASE_NAME=$DATABASE_NAME
+      - export JWT_SECRET=$JWT_SECRET
+      - export DOMAIN=$DOMAIN
+  build:
+    commands:
+      - echo "Running tests and type checks"
+      - yarn build
+      - yarn test
+  post_build:
+    commands:
+      - echo "Starting application in production mode"
+      - yarn start:prod
+artifacts:
+  files:
+    - "**/*"
+  base-directory: "dist"
