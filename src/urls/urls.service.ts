@@ -35,7 +35,7 @@ export class UrlsService {
       });
 
       if (existingUrl) {
-        return `${this.domain}${existingUrl.shortUrl}`;
+        return `${this.domain}/${existingUrl.shortUrl}`;
       }
 
       const url = this.urlsRepository.create({
