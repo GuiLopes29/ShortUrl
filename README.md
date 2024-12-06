@@ -40,7 +40,9 @@ $ yarn start
 
 ## Usage
 
-The application will be available at `http://localhost:3000`.
+All application will be available at `http://localhost:3000` if you are running it locally.
+
+But it's also available on AWS at `http://ec2-18-231-116-58.sa-east-1.compute.amazonaws.com/` or the direct IP `http://18.206.223.89/`
 
 ## API Documentation
 
